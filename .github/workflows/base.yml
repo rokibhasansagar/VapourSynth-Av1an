@@ -14,6 +14,9 @@ jobs:
 
   build:
 
+    env:
+      RCLONE_CONFIG_HASH: "e3ae1975eb92f351c4acfa1fc23c7ca4"
+
     runs-on: ubuntu-22.04
 
     steps:
@@ -28,8 +31,16 @@ jobs:
           docker system prune -a -f
           sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache /usr/local/share/vcpkg /usr/share/dotnet /opt/ghc
       -
+        name: Enable KVM group perms
+        run: |
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm
+      -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+        with:
+          platforms: amd64
       -
         name: Set up Docker Buildx
         id: buildx
@@ -58,7 +69,7 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/vapoursynth-av1an-rt
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/VapourCoderZ #vapoursynth-av1an-rt
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,enable=true,prefix=sha-,format=short
@@ -69,16 +80,24 @@ jobs:
       -
         name: Build & Push the Docker image
         id: docker_build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_SUMMARY: true
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
+          allow: security.insecure
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64/v2,linux/amd64/v3
+          platforms: linux/amd64 #,linux/amd64/v2,linux/amd64/v3
           push: true
+          provenance: false
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=registry,ref=archlinux:base-devel
           cache-to: type=inline
+          secrets: |
+            RCLONE_CONFIG_HASH=${{ env.RCLONE_CONFIG_HASH }}
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+

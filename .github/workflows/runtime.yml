@@ -1,0 +1,187 @@
+name: VapourDocker Builder (Runtime)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'runtime/Dockerfile'
+  workflow_dispatch:
+  schedule:
+    # Runs at 03:00 UTC on Saturdays and Tuesdays.
+    - cron: '0 3 * * SAT,TUE'
+
+concurrency:
+  group: ci-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ['linux/amd64','linux/amd64/v2','linux/amd64/v3']
+    env:
+      platform: ${{ matrix.platform }}
+      VapourDockerID: "vapoursynth-av1an-runtime"
+      RCLONE_CONFIG_HASH: "e3ae1975eb92f351c4acfa1fc23c7ca4"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+      - name: Enable KVM group perms [Experimental]
+        run: |
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+              | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm
+      - name: Minor Disc Cleanup [Optinal]
+        run: |
+          docker system prune -a -f
+          sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache \
+            /usr/local/share/vcpkg /usr/share/dotnet /opt/ghc
+      - name: Set up QEMU [Optional]
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: amd64
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+          buildkitd-config-inline: |
+            [worker.oci]
+              max-parallelism = 4
+      - name: Inspect builder
+        run: |
+          echo "Name:      ${{ steps.buildx.outputs.name }}"
+          echo "Endpoint:  ${{ steps.buildx.outputs.endpoint }}"
+          echo "Status:    ${{ steps.buildx.outputs.status }}"
+          echo "Flags:     ${{ steps.buildx.outputs.flags }}"
+          echo "Platforms: ${{ steps.buildx.outputs.platforms }}"
+      - name: Login to Docker [Hub]
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Tag Selection and Stalling of Native Image Build
+        run: |
+          # Tag Selection
+          case "${platform}" in
+            'linux/amd64')
+              export headTag="latest"
+              export DocExportedTar="${VapourDockerID}"
+              ;;
+            *)
+              export headTag="$(awk -F'/' '{print $2"-"$3}' <<<"${platform}")"
+              export DocExportedTar="${VapourDockerID}-${headTag}"
+              ;;
+          esac
+          echo "DocExportedTar=${DocExportedTar}" >>$GITHUB_ENV
+          echo "headTag=${headTag}" >>$GITHUB_ENV
+          # Stall Native Image Build to make `latest` tag truely the latest one available
+          if [[ ${headTag} == "latest" ]]; then
+            echo -e "[</>] Please Wait 5 Minutes For The Image To Be Built..."
+            for i in $(seq 4 6 62); do
+              sleep ${i} && printf ".."
+            done
+            echo
+          fi
+      - name: Docker Metadata action
+        if: matrix.platform == 'linux/amd64'
+        id: docker_meta_native
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.VapourDockerID }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,enable=true,prefix=sha-,format=short
+            type=raw,value={{date 'YY.MM.DDDD.HHmm' tz='Asia/Dhaka'}},enable=true
+      - name: Build & Push the Docker image
+        if: matrix.platform == 'linux/amd64'
+        id: docker_build_native
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_SUMMARY: true
+          DOCKER_BUILD_RECORD_UPLOAD: true
+        with:
+          allow: security.insecure
+          context: .
+          file: runtime/Dockerfile
+          platforms: ${{ env.platform }}
+          push: true
+          provenance: false
+          tags: ${{ steps.docker_meta_native.outputs.tags }}
+          labels: |
+            maintainer="fr3akyphantom <rokibhasansagar2014@outlook.com>"
+            org.opencontainers.image.licenses=MIT
+          # cache-from: type=registry,ref=archlinux:base-devel
+          # cache-from: type=local,src=/home/runner/${{ env.DocExportedTar }}
+          cache-to: type=local,dest=/home/runner/${{ env.DocExportedTar }}
+          outputs: |
+            type=registry
+            type=tar,dest=/home/runner/${{ env.DocExportedTar }}.tar
+          secrets: |
+            RCLONE_CONFIG_HASH=${{ env.RCLONE_CONFIG_HASH }}
+      - name: Build & Push the Docker image
+        if: matrix.platform != 'linux/amd64'
+        id: docker_build_secondary
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_SUMMARY: true
+          DOCKER_BUILD_RECORD_UPLOAD: false
+        with:
+          allow: security.insecure
+          context: .
+          file: runtime/Dockerfile
+          platforms: ${{ env.platform }}
+          push: true
+          provenance: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.VapourDockerID }}:${{ env.headTag }}
+          labels: |
+            maintainer="fr3akyphantom <rokibhasansagar2014@outlook.com>"
+            org.opencontainers.image.licenses=MIT
+          # cache-from: type=registry,ref=archlinux:base-devel
+          # cache-from: type=local,src=/home/runner/${{ env.DocExportedTar }}
+          cache-to: type=local,dest=/home/runner/${{ env.DocExportedTar }}
+          outputs: |
+            type=registry
+            type=tar,dest=/home/runner/${{ env.DocExportedTar }}.tar
+          secrets: |
+            RCLONE_CONFIG_HASH=${{ env.RCLONE_CONFIG_HASH }}
+      - name: Image digest (Native)
+        if: matrix.platform == 'linux/amd64'
+        run: echo ${{ steps.docker_build_native.outputs.digest }}
+      - name: Image digest (Secondary)
+        if: matrix.platform != 'linux/amd64'
+        run: echo ${{ steps.docker_build_secondary.outputs.digest }}
+      - name: Output Details
+        run: |
+          cd /home/runner/
+          du -sh ${DocExportedTar}*
+          tree -a -h -L 4 .
+          tar -tvf ${DocExportedTar}.tar >./${DocExportedTar}.log
+          tar -I'xz -9e -T2' -cf ${DocExportedTar}.log.txz ${DocExportedTar}.log
+          curl -s -F"file=@${DocExportedTar}.log.txz" https://temp.sh/upload && echo
+      - name: Setup Rclone
+        uses: rokibhasansagar/custom_workflows/setup_rclone@main
+        # env:
+        #   RCLONE_CONFIG_HASH: ${{ env.RCLONE_CONFIG_HASH }}
+      - name: Upload /home/runner/${{ env.DocExportedTar }}.tar.gz
+        run: |
+          cd /home/runner/
+          pigz -9 ${DocExportedTar}.tar
+          rclone copy ./${DocExportedTar}.tar.gz "ms365:Public/ArchVapourBuilds/" \
+            --fast-list --stats-one-line-date --progress -v
+      - name: Upload DocExportedTar(gz) as Artifact
+        if: matrix.platform == 'linux/amd64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vapoursynth-av1an-runtime-native
+          path: /home/runner/${{ env.VapourDockerID }}.tar.gz
+          retention-days: 7
+          compression-level: 0
+

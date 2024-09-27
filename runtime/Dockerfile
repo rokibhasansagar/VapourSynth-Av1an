@@ -97,17 +97,19 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	( SvtAv1EncApp --version || true )
 	echo -e "[>] PostPlugs PacCache Investigation"
 	set +ex
-	# find /tmp /home/app/.cache/paru/ -maxdepth 3 -type f -name "*.pkg.tar.zst" | xargs -i sudo cp -vf {} /var/cache/pacman/pkg/
-	find /tmp /home/app/.cache/paru/ -maxdepth 3 -type f -name "*.pkg.tar.zst" | while read -r i; do curl -s -F"file=@${i}" https://temp.sh/upload && echo; done
+	case "${TARGETPLATFORM}" in
+	  "linux/amd64/v2") export rclarch="x86-64-v2" ;;
+	  "linux/amd64/v3") export rclarch="x86-64-v3" ;;
+	  *) export rclarch="native" ;;
+	esac
+	if [[ ${rclarch} == "native" ]]; then
+	  # find /tmp /home/app/.cache/paru/ -maxdepth 3 -type f -name "*.pkg.tar.zst" | xargs -i sudo cp -vf {} /var/cache/pacman/pkg/
+	  find /tmp /home/app/.cache/paru/ -maxdepth 3 -type f -name "*.pkg.tar.zst" | while read -r i; do curl -s -F"file=@${i}" https://temp.sh/upload && echo; done
+	fi
 	set -ex
 	sudo du -sh /var/cache/pacman/pkg
 	ls -lAog /home/app/.cache/paru/pkgbuilds/*/*.pkg.tar.zst /var/cache/pacman/pkg/*.pkg.tar.zst
 	(
-	  case "${TARGETPLATFORM}" in
-	    "linux/amd64/v2") export rclarch="x86-64-v2" ;;
-	    "linux/amd64/v3") export rclarch="x86-64-v3" ;;
-	    *) export rclarch="native" ;;
-	  esac
 	  mkdir -p /tmp/pkgs
 	  ( rclone purge "ms365:Public/ArchVapourBuilds/${rclarch}/Step_Zero2/" --fast-list --retries=1 2>/dev/null ) || true
 	  find /home/app/.cache/paru/pkgbuilds/ -depth -type f -name "*.pkg.tar.zst" | xargs -i sudo mv -vf {} /tmp/pkgs/
@@ -134,7 +136,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	sudo du -sh ~/\.[a-z]* 2>/dev/null
 	echo -e "[<] Cleanup"
 	find "$(python -c "import os;print(os.path.dirname(os.__file__))")" -depth -type d -name __pycache__ -exec sudo rm -rf '{}' + 2>/dev/null  # /usr/share/
-	( sudo pacman -Rdd cmake ninja clang nasm yasm meson rust cargo-c compiler-rt zig-0.12-bin --noconfirm 2>/dev/null || true )
+	( sudo pacman -Rdd cmake ninja clang nasm yasm meson rust cargo-c compiler-rt zig-nightly-bin --noconfirm 2>/dev/null || true )
 	sudo rm -rf /tmp/* /var/cache/pacman/pkg/* /home/app/.cache/zig/* /home/app/.cache/yay/* /home/app/.cache/paru/{clone,pkgbuilds}/* /home/app/.cargo/* 2>/dev/null
 	echo -e "[+] List of All Packages At The End Of All Process:"
 	echo -e "$(sudo pacman -Q | awk '{print $1}' | sed -z 's/\n/ /g;s/\s$/\n/g')" 2>/dev/null

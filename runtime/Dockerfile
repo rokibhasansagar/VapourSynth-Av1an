@@ -25,6 +25,14 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	export PARU_OPTS="--skipreview --noprovides --useask --combinedupgrade --batchinstall --noinstalldebug --removemake --cleanafter --nokeepsrc"
 	echo -e "[+] Build Tools PreInstallation"
 	paru -S --noconfirm --needed ${PARU_OPTS} cmake ninja clang nasm yasm meson compiler-rt jq rust cargo-c libgit2 zip p7zip python-pip
+	paru -S --noconfirm --needed ${PARU_OPTS} rclone
+	# Setup personal rclone config, again
+	export RCLONE_CONFIG_HASH=$(< /run/secrets/RCLONE_CONFIG_HASH) || true
+	mkdir -p ~/.config/rclone
+	curl -sL --retry 5 --retry-connrefused "https://gist.github.com/rokibhasansagar/${RCLONE_CONFIG_HASH}" >./rcl.log
+	curl -sL --retry 5 --retry-connrefused "https://gist.github.com/rokibhasansagar/${RCLONE_CONFIG_HASH}/$(grep -m1 -o "archive/.*.zip" ./rcl.log)" -O
+	unzip -j *.zip && cat *.rclone.config >~/.config/rclone/rclone.conf
+	rm *.zip ./rcl.log *.rclone.config
 	export PARU_OPTS="--skipreview --noprovides --useask --combinedupgrade --batchinstall --noinstalldebug --removemake --nocleanafter --nokeepsrc"
 	echo -e "[+] List of Packages Before Installing Dependency Apps:"
 	echo -e "$(sudo pacman -Q | awk '{print $1}' | sed -z 's/\n/ /g;s/\s$/\n/g')" 2>/dev/null
@@ -65,7 +73,9 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	ls -lAog /var/cache/pacman/pkg/*.pkg.tar.zst 2>/dev/null
 	echo -e "[+] Plugins Installation Block Starts Here"
 	# llvm(17)-libs from Arch for vsakarin is needed now, Arch llvm-libs is now 18
-	export pkgs=(llvm17-libs vapoursynth-plugin-{vsakarin,adjust,adaptivegrain}-git) && _custPKGBuilder
+	rclone copy "ms365:Public/xTemp/" --include="llvm17-{,libs-}17.0.6-7-x86_64.pkg.tar.zst" . --max-depth=1 --fast-list
+	sudo pacman -U --noconfirm llvm17-{,libs-}17.0.6-7-x86_64.pkg.tar.zst
+	export pkgs=(vapoursynth-plugin-{vsakarin,adjust,adaptivegrain}-git) && _custPKGBuilder
 	export pkgs=({vapoursynth-plugin-,}waifu2x-ncnn-vulkan-git) && _custPKGBuilder
 	# export silentFlags='-Wno-unused-parameter -Wno-deprecated-declarations -Wno-unknown-pragmas -Wno-implicit-fallthrough'
 	# CFLAGS+=" ${silentFlags}" CXXFLAGS+=" ${silentFlags}"
@@ -93,14 +103,6 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	sudo du -sh /var/cache/pacman/pkg
 	ls -lAog /home/app/.cache/paru/pkgbuilds/*/*.pkg.tar.zst /var/cache/pacman/pkg/*.pkg.tar.zst
 	(
-	  paru -S --noconfirm --needed ${PARU_OPTS} rclone
-	  # Setup personal rclone config, again
-	  export RCLONE_CONFIG_HASH=$(< /run/secrets/RCLONE_CONFIG_HASH) || true
-	  mkdir -p ~/.config/rclone
-	  curl -sL --retry 5 --retry-connrefused "https://gist.github.com/rokibhasansagar/${RCLONE_CONFIG_HASH}" >./rcl.log
-	  curl -sL --retry 5 --retry-connrefused "https://gist.github.com/rokibhasansagar/${RCLONE_CONFIG_HASH}/$(grep -m1 -o "archive/.*.zip" ./rcl.log)" -O
-	  unzip -j *.zip && cat *.rclone.config >~/.config/rclone/rclone.conf
-	  rm *.zip ./rcl.log *.rclone.config
 	  case "${TARGETPLATFORM}" in
 	    "linux/amd64/v2") export rclarch="x86-64-v2" ;;
 	    "linux/amd64/v3") export rclarch="x86-64-v3" ;;

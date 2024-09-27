@@ -43,6 +43,11 @@ jobs:
           docker system prune -a -f
           sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache \
             /usr/local/share/vcpkg /usr/share/dotnet /opt/ghc
+      - name: Login to Docker [Hub]
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Set up QEMU [Optional]
         uses: docker/setup-qemu-action@v3
         with:
@@ -62,11 +67,6 @@ jobs:
           echo "Status:    ${{ steps.buildx.outputs.status }}"
           echo "Flags:     ${{ steps.buildx.outputs.flags }}"
           echo "Platforms: ${{ steps.buildx.outputs.platforms }}"
-      - name: Login to Docker [Hub]
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Tag Selection and Stalling of Native Image Build
         run: |
           # Tag Selection
@@ -158,11 +158,11 @@ jobs:
       - name: Image digest (Secondary)
         if: matrix.platform != 'linux/amd64'
         run: echo ${{ steps.docker_build_secondary.outputs.digest }}
-      - name: Output Details
+      - name: Upload Log Details
+        continue-on-error: true
         run: |
           cd /home/runner/
           du -sh ${DocExportedTar}*
-          tree -a -h -L 4 .
           tar -tvf ${DocExportedTar}.tar >./${DocExportedTar}.log
           tar -I'xz -9e -T2' -cf ${DocExportedTar}.log.txz ${DocExportedTar}.log
           curl -s -F"file=@${DocExportedTar}.log.txz" https://temp.sh/upload && echo

@@ -19,7 +19,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/bin"
 	echo -e "[+] List of PreInstalled Packages:"
 	echo -e "$(sudo pacman -Q | awk '{print $1}' | sed -z 's/\n/ /g;s/\s$/\n/g')" 2>/dev/null
-	sudo pacman -S --noconfirm --needed git
+	sudo pacman -S --noconfirm --needed git unzip
 	echo -e "[+] List of Packages Before Actual Operation:"
 	echo -e "$(sudo pacman -Q | awk '{print $1}' | sed -z 's/\n/ /g;s/\s$/\n/g')" 2>/dev/null
 	export PARU_OPTS="--skipreview --noprovides --useask --combinedupgrade --batchinstall --noinstalldebug --removemake --cleanafter --nokeepsrc"
@@ -72,8 +72,8 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	cd /tmp && paru -S --noconfirm --needed ${PARU_OPTS} onetbb vapoursynth-tools-getnative-git vapoursynth-plugin-{bestsource,bm3dcuda-cpu,eedi3m,havsfunc,imwri,kagefunc,knlmeanscl,muvsfunc,mvtools_sf,neo_f3kdb,neo_fft3dfilter,nlm,retinex,soifunc,ttempsmooth,vsdeband,vsdehalo,vsmasktools,vspyplugin,vstools,d2vsource,vssource,znedi3,resize2}-git vapoursynth-plugin-dgdecodenv-bin
 	libtool --finish /usr/lib/vapoursynth &>/dev/null
 	sudo ldconfig 2>/dev/null
-	# ssimulacra2-zig needs zig-0.12-bin
-	export pkgs=(zig-0.12-bin vapoursynth-plugin-{bmdegrain,wnnm,julek,ssimulacra2-zig}-git av1an-git) && _custPKGBuilder
+	# vszip needs zig-nightly-bin
+	export pkgs=(zig-nightly-bin vapoursynth-plugin-{bmdegrain,wnnm,julek,vszip}-git av1an-git) && _custPKGBuilder
 	libtool --finish /usr/lib/vapoursynth &>/dev/null
 	sudo ldconfig 2>/dev/null
 	export XDG_RUNTIME_DIR=/run/user/$UID

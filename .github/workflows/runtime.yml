@@ -174,14 +174,16 @@ jobs:
         run: |
           cd /home/runner/
           pigz -9 ${DocExportedTar}.tar
-          rclone copy ./${DocExportedTar}.tar.gz "ms365:Public/ArchVapourBuilds/" \
-            --fast-list --stats-one-line-date --progress -v
+          for remote in onedrive ms365; do
+            rclone copy ./${DocExportedTar}.tar.gz "${remote}:Public/ArchVapourBuilds/" \
+              --fast-list --stats-one-line-date --progress -v
+          done
       - name: Upload DocExportedTar(gz) as Artifact
         if: matrix.platform == 'linux/amd64'
         uses: actions/upload-artifact@v4
         with:
           name: vapoursynth-av1an-runtime-native
           path: /home/runner/${{ env.VapourDockerID }}.tar.gz
-          retention-days: 7
+          retention-days: 5
           compression-level: 0
 

@@ -79,7 +79,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	export pkgs=({vapoursynth-plugin-,}waifu2x-ncnn-vulkan-git) && _custPKGBuilder
 	# export silentFlags='-Wno-unused-parameter -Wno-deprecated-declarations -Wno-unknown-pragmas -Wno-implicit-fallthrough'
 	# CFLAGS+=" ${silentFlags}" CXXFLAGS+=" ${silentFlags}"
-	cd /tmp && paru -S --noconfirm --needed ${PARU_OPTS} onetbb vapoursynth-tools-getnative-git vapoursynth-plugin-{bestsource,bm3dcuda-cpu,eedi3m,havsfunc,imwri,kagefunc,knlmeanscl,muvsfunc,mvtools_sf,neo_f3kdb,neo_fft3dfilter,nlm,retinex,soifunc,ttempsmooth,vsdeband,vsdehalo,vsmasktools,vspyplugin,vstools,d2vsource,vssource,znedi3,resize2}-git vapoursynth-plugin-dgdecodenv-bin
+	cd /tmp && paru -S --noconfirm --needed ${PARU_OPTS} onetbb vapoursynth-tools-getnative-git vapoursynth-plugin-{bestsource,bm3dcuda-cpu,eedi3m,havsfunc,imwri,kagefunc,knlmeanscl,muvsfunc,mvtools_sf,neo_f3kdb,neo_fft3dfilter,nlm,retinex,soifunc,ttempsmooth,vsdeband,vsdehalo,vsmasktools,vspyplugin,vstools,d2vsource,vssource,znedi3,resize2}-git vapoursynth-plugin-dgdecodenv-bin && sudo pacman -Rdd nvidia-utils --noconfirm 2>/dev/null && paru -S --noconfirm --needed ${PARU_OPTS} vulkan-swrast
 	libtool --finish /usr/lib/vapoursynth &>/dev/null
 	sudo ldconfig 2>/dev/null
 	# vszip needs zig-nightly-bin

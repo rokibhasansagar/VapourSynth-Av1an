@@ -7,8 +7,8 @@ on:
       - 'runtime/Dockerfile'
   workflow_dispatch:
   schedule:
-    # Runs at 03:00 UTC on Saturdays and Tuesdays.
-    - cron: '0 3 * * SAT,TUE'
+    # Runs at 03:00 UTC on Saturdays, Mondays and Wednesdays.
+    - cron: '0 3 * * SAT,MON,WED'
 
 concurrency:
   group: ci-runtime-${{ github.ref }}
@@ -184,6 +184,6 @@ jobs:
         with:
           name: vapoursynth-av1an-runtime-native
           path: /home/runner/${{ env.VapourDockerID }}.tar.gz
-          retention-days: 5
+          retention-days: 4
           compression-level: 0
 

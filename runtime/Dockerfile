@@ -60,7 +60,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	export unpkgs=(vapoursynth aom) && _uninstPKG
 	export pkgs=({aom-psy101,vapoursynth,foosynth-plugin-lsmashsource}-git) && _custPKGBuilder
 	libtool --finish /usr/lib &>/dev/null
-	libtool --finish /usr/lib/python3.12/site-packages &>/dev/null
+	libtool --finish /usr/lib/python3.13/site-packages &>/dev/null
 	sudo ldconfig 2>/dev/null
 	echo -e "[-] Removing x265, svt-av1 in order to install latest version"
 	export unpkgs=(x265 svt-av1) && _uninstPKG
@@ -72,9 +72,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	sudo du -sh /var/cache/pacman/pkg /home/app/.cache/paru/*
 	ls -lAog /var/cache/pacman/pkg/*.pkg.tar.zst 2>/dev/null
 	echo -e "[+] Plugins Installation Block Starts Here"
-	# llvm(17)-libs from Arch for vsakarin is needed now, Arch llvm-libs is now 18
-	rclone copy "ms365:Public/xTemp/" --include="llvm17-{,libs-}17.0.6-7-x86_64.pkg.tar.zst" . --max-depth=1 --fast-list
-	sudo pacman -U --noconfirm llvm17-{,libs-}17.0.6-7-x86_64.pkg.tar.zst
+	# vsakarin can now use Arch llvm(19)-libs
 	export pkgs=(vapoursynth-plugin-{vsakarin,adjust,adaptivegrain}-git) && _custPKGBuilder
 	export pkgs=({vapoursynth-plugin-,}waifu2x-ncnn-vulkan-git) && _custPKGBuilder
 	# export silentFlags='-Wno-unused-parameter -Wno-deprecated-declarations -Wno-unknown-pragmas -Wno-implicit-fallthrough'

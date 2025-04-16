@@ -80,7 +80,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	cd /tmp && paru -S --noconfirm --needed ${PARU_OPTS} onetbb vapoursynth-tools-getnative-git vapoursynth-plugin-{bestsource,bm3dcuda-cpu,eedi3m,havsfunc,imwri,kagefunc,knlmeanscl,muvsfunc,mvtools_sf,neo_f3kdb,neo_fft3dfilter,nlm,retinex,soifunc,ttempsmooth,vsdeband,vsdehalo,vsmasktools,vspyplugin,vstools,d2vsource,vssource,znedi3,resize2}-git vapoursynth-plugin-dgdecodenv-bin && sudo pacman -Rdd nvidia-utils --noconfirm 2>/dev/null && paru -S --noconfirm --needed ${PARU_OPTS} vulkan-swrast
 	libtool --finish /usr/lib/vapoursynth &>/dev/null
 	sudo ldconfig 2>/dev/null
-	# vszip needs zig-nightly-bin
+	# vszip needs zig (v0.15.0-dev.355+)
 	export pkgs=(zig-nightly-bin vapoursynth-plugin-{bmdegrain,wnnm,julek,vszip}-git av1an-git) && _custPKGBuilder
 	libtool --finish /usr/lib/vapoursynth &>/dev/null
 	sudo ldconfig 2>/dev/null

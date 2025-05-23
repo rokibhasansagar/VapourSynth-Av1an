@@ -24,7 +24,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	echo -e "$(sudo pacman -Q | awk '{print $1}' | sed -z 's/\n/ /g;s/\s$/\n/g')" 2>/dev/null
 	export PARU_OPTS="--skipreview --noprovides --useask --combinedupgrade --batchinstall --noinstalldebug --removemake --cleanafter --nokeepsrc"
 	echo -e "[+] Build Tools PreInstallation"
-	paru -S --noconfirm --needed ${PARU_OPTS} cmake ninja clang nasm yasm meson compiler-rt jq rust cargo-c libgit2 zip p7zip python-pip
+	paru -S --noconfirm --needed ${PARU_OPTS} cmake ninja clang nasm yasm meson compiler-rt jq rust cargo-c libgit2 zip p7zip python-pip python-utils
 	paru -S --noconfirm --needed ${PARU_OPTS} rclone
 	# Setup personal rclone config, again
 	export RCLONE_CONFIG_HASH=$(< /run/secrets/RCLONE_CONFIG_HASH) || true
@@ -59,8 +59,9 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	export pkgs=(libjxl-metrics-git) && _custPKGBuilder
 	export unpkgs=(vapoursynth aom) && _uninstPKG
 	export pkgs=({aom-psy101,vapoursynth,foosynth-plugin-lsmashsource}-git) && _custPKGBuilder
+	export pythondir=$(python -c "import os;print(os.path.dirname(os.__file__))")
 	libtool --finish /usr/lib &>/dev/null
-	libtool --finish /usr/lib/python3.13/site-packages &>/dev/null
+	libtool --finish ${pythondir}/site-packages &>/dev/null
 	sudo ldconfig 2>/dev/null
 	echo -e "[-] Removing x265, svt-av1 in order to install latest version"
 	export unpkgs=(x265 svt-av1) && _uninstPKG
@@ -133,7 +134,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	echo -e "[i] Home directory Investigation"
 	sudo du -sh ~/\.[a-z]* 2>/dev/null
 	echo -e "[<] Cleanup"
-	find "$(python -c "import os;print(os.path.dirname(os.__file__))")" -depth -type d -name __pycache__ -exec sudo rm -rf '{}' + 2>/dev/null  # /usr/share/
+	find "${pythondir}" -depth -type d -name __pycache__ -exec sudo rm -rf '{}' + 2>/dev/null  # /usr/share/
 	( sudo pacman -Rdd cmake ninja clang nasm yasm meson rust cargo-c compiler-rt zig-nightly-bin --noconfirm 2>/dev/null || true )
 	sudo rm -rf /tmp/* /var/cache/pacman/pkg/* /home/app/.cache/zig/* /home/app/.cache/yay/* /home/app/.cache/paru/{clone,pkgbuilds}/* /home/app/.cargo/* 2>/dev/null
 	echo -e "[+] List of All Packages At The End Of All Process:"

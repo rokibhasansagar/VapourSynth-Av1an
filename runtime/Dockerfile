@@ -73,7 +73,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	sudo du -sh /var/cache/pacman/pkg /home/app/.cache/paru/*
 	ls -lAog /var/cache/pacman/pkg/*.pkg.tar.zst 2>/dev/null
 	echo -e "[+] Plugins Installation Block Starts Here"
-	# vsakarin can now use Arch llvm(19)-libs
+	# vsakarin can now use Arch llvm(20)-libs
 	export pkgs=(vapoursynth-plugin-{vsakarin,adjust,adaptivegrain}-git) && _custPKGBuilder
 	export pkgs=({vapoursynth-plugin-,}waifu2x-ncnn-vulkan-git) && _custPKGBuilder
 	# export silentFlags='-Wno-unused-parameter -Wno-deprecated-declarations -Wno-unknown-pragmas -Wno-implicit-fallthrough'
@@ -81,7 +81,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	cd /tmp && paru -S --noconfirm --needed ${PARU_OPTS} onetbb vapoursynth-tools-getnative-git vapoursynth-plugin-{bestsource,bm3dcuda-cpu,eedi3m,havsfunc,imwri,kagefunc,knlmeanscl,muvsfunc,mvtools_sf,neo_f3kdb,neo_fft3dfilter,nlm,retinex,soifunc,ttempsmooth,vsdeband,vsdehalo,vsmasktools,vspyplugin,vstools,d2vsource,vssource,znedi3,resize2}-git vapoursynth-plugin-dgdecodenv-bin && sudo pacman -Rdd nvidia-utils --noconfirm 2>/dev/null && paru -S --noconfirm --needed ${PARU_OPTS} vulkan-swrast
 	libtool --finish /usr/lib/vapoursynth &>/dev/null
 	sudo ldconfig 2>/dev/null
-	# vszip uses zig-bin (v0.14.0 stable from ArchRepo)
+	# vszip uses zig-bin (v0.14.x stable from ArchRepo)
 	export pkgs=(vapoursynth-plugin-{bmdegrain,wnnm,julek,vszip}-git av1an-git) && _custPKGBuilder
 	libtool --finish /usr/lib/vapoursynth &>/dev/null
 	sudo ldconfig 2>/dev/null

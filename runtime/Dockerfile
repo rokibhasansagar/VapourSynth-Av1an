@@ -138,7 +138,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	sudo du -sh ~/\.[a-z]* 2>/dev/null
 	echo -e "[<] Cleanup"
 	find "${pythondir}" -depth -type d -name __pycache__ -exec sudo rm -rf '{}' + 2>/dev/null  # /usr/share/
-	( sudo pacman -Rdd cmake ninja clang nasm yasm meson rust cargo-c compiler-rt --noconfirm 2>/dev/null || true )
+	( sudo pacman -Rdd cmake ninja clang yasm meson rust cargo-c compiler-rt --noconfirm 2>/dev/null || true )
 	sudo rm -rf /tmp/* /var/cache/pacman/pkg/* /home/app/.cache/zig/* /home/app/.cache/yay/* /home/app/.cache/paru/{clone,pkgbuilds}/* /home/app/.cargo/* 2>/dev/null
 	echo -e "[+] List of All Packages At The End Of All Process:"
 	echo -e "$(sudo pacman -Q | awk '{print $1}' | sed -z 's/\n/ /g;s/\s$/\n/g')" 2>/dev/null

@@ -24,7 +24,7 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	echo -e "$(sudo pacman -Q | awk '{print $1}' | sed -z 's/\n/ /g;s/\s$/\n/g')" 2>/dev/null
 	export PARU_OPTS="--skipreview --noprovides --useask --combinedupgrade --batchinstall --noinstalldebug --removemake --cleanafter --nokeepsrc"
 	echo -e "[+] Build Tools PreInstallation"
-	paru -S --noconfirm --needed ${PARU_OPTS} cmake ninja clang nasm yasm meson compiler-rt jq rust cargo-c libgit2 zip p7zip python-pip python-utils
+	paru -S --noconfirm --needed ${PARU_OPTS} cmake ninja clang yasm meson compiler-rt jq rust cargo-c libgit2 zip p7zip python-pip python-utils
 	paru -S --noconfirm --needed ${PARU_OPTS} rclone
 	# Setup personal rclone config, again
 	export RCLONE_CONFIG_HASH=$(< /run/secrets/RCLONE_CONFIG_HASH) || true
@@ -51,6 +51,9 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	    ( sudo pacman -Rdd ${pkg} --noconfirm 2>/dev/null ) || true
 	  done
 	}
+	echo -e "[%] nasm hack"
+	export pkgs=(nasm) && _custPKGBuilder
+	sudo sed -i '/^#IgnorePkg/c\IgnorePkg = nasm' /etc/pacman.conf 2>/dev/null
 	echo -e "[+] vapoursynth-git, ffmpeg and other tools Installation with pacman"
 	export unpkgs=(zimg) && _uninstPKG
 	export pkgs=({zimg,libdovi,libhdr10plus-rs}-git) && _custPKGBuilder

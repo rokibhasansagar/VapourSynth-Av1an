@@ -10,6 +10,8 @@ ARG BUILDPLATFORM
 
 SHELL ["/bin/bash", "-c"]
 
+ENV REMOTE=gdrive_2tb
+
 RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	echo -e "TARGETPLATFORM=${TARGETPLATFORM} and BUILDPLATFORM=${BUILDPLATFORM}"
 	# Update System Immediately
@@ -113,15 +115,15 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	ls -lAog /home/app/.cache/paru/pkgbuilds/*/*.pkg.tar.zst /var/cache/pacman/pkg/*.pkg.tar.zst
 	(
 	  mkdir -p /tmp/pkgs
-	  ( rclone purge "ms365:Public/ArchVapourBuilds/${rclarch}/Step_Zero2/" --fast-list --retries=1 2>/dev/null ) || true
+	  ( rclone purge "${REMOTE}:ArchVapourBuilds/${rclarch}/Step_Zero2/" --fast-list --retries=1 2>/dev/null ) || true
 	  find /home/app/.cache/paru/pkgbuilds/ -depth -type f -name "*.pkg.tar.zst" | xargs -i sudo mv -vf {} /tmp/pkgs/
-	  rclone copy /tmp/pkgs/ --include="*.pkg.tar.zst" "ms365:Public/ArchVapourBuilds/${rclarch}/Step_Zero2/" --fast-list -v 2>/dev/null && rm /tmp/pkgs/*
-	  ( rclone purge "ms365:Public/ArchVapourBuilds/${rclarch}/Step_Zero3/" --fast-list --retries=1 2>/dev/null ) || true
+	  rclone copy /tmp/pkgs/ --include="*.pkg.tar.zst" "${REMOTE}:ArchVapourBuilds/${rclarch}/Step_Zero2/" --fast-list -v 2>/dev/null && rm /tmp/pkgs/*
+	  ( rclone purge "${REMOTE}:ArchVapourBuilds/${rclarch}/Step_Zero3/" --fast-list --retries=1 2>/dev/null ) || true
 	  find /home/app/.cache/paru/clone/ -depth -type f -name "*.pkg.tar.zst" | xargs -i sudo mv -vf {} /tmp/pkgs/
-	  rclone copy /tmp/pkgs/ --include="*.pkg.tar.zst" "ms365:Public/ArchVapourBuilds/${rclarch}/Step_Zero3/" --fast-list -v 2>/dev/null && rm /tmp/pkgs/*
-	  ( rclone purge "ms365:Public/ArchVapourBuilds/${rclarch}/Step_Zero4/" --fast-list --retries=1 2>/dev/null ) || true
+	  rclone copy /tmp/pkgs/ --include="*.pkg.tar.zst" "${REMOTE}:ArchVapourBuilds/${rclarch}/Step_Zero3/" --fast-list -v 2>/dev/null && rm /tmp/pkgs/*
+	  ( rclone purge "${REMOTE}:ArchVapourBuilds/${rclarch}/Step_Zero4/" --fast-list --retries=1 2>/dev/null ) || true
 	  find /var/cache/pacman/pkg/ -depth -type f -name "*.pkg.tar.zst" | xargs -i sudo mv -vf {} /tmp/pkgs/
-	  rclone copy /tmp/pkgs/ --include="*.pkg.tar.zst" "ms365:Public/ArchVapourBuilds/${rclarch}/Step_Zero4/" --fast-list -v 2>/dev/null && rm /tmp/pkgs/*
+	  rclone copy /tmp/pkgs/ --include="*.pkg.tar.zst" "${REMOTE}:ArchVapourBuilds/${rclarch}/Step_Zero4/" --fast-list -v 2>/dev/null && rm /tmp/pkgs/*
 	  sudo rm ~/.config/rclone/rclone.conf
 	  sudo pacman -Rdd rclone --noconfirm 2>/dev/null
 	) || true

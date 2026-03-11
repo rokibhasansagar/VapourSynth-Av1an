@@ -16,6 +16,8 @@ RUN --mount=type=secret,id=RCLONE_CONFIG_HASH,uid=1000 <<-'EOL'
 	echo -e "TARGETPLATFORM=${TARGETPLATFORM} and BUILDPLATFORM=${BUILDPLATFORM}"
 	# Update System Immediately
 	( sudo pacman -Syu --noconfirm 2>/dev/null ) || ( sudo pacman -Syu --noconfirm 2>/dev/null || true )
+	# re-Install base-devel
+	sudo pacman -S --noconfirm --needed base-devel
 	( sudo rm -rvf /var/cache/pacman/pkg/*.pkg.tar.zst* 2>/dev/null || true )
 	set -ex
 	export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/bin"
